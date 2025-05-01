@@ -33,8 +33,8 @@ This Python project helps you find businesses or points of interest matching a k
 
 1. Clone this repository:
    ```
-   git clone <repository-url>
-   cd google_maps_finder
+   git clone https://github.com/ccomkhj/Google-Maps-Entity-Finder.git
+   cd Google-Maps-Entity-Finder
    ```
 
 2. Install the required dependencies:
