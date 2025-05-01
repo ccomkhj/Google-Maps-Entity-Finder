@@ -21,6 +21,11 @@ This Python project helps you find businesses or points of interest matching a k
 - Filter results to only include places located between two geographic points
 - Output results in JSON format (either to stdout or to a file)
 - Configurable search radius and buffer distance
+- Phone numbers are now included in output if available
+
+## Code Structure Change
+
+- The main backend logic file has been renamed from `mcp_integration.py` to `place_search.py` to better reflect its purpose. Update any imports or references accordingly.
 
 ## Prerequisites
 
@@ -54,25 +59,44 @@ This Python project helps you find businesses or points of interest matching a k
 ### Command Line Interface
 
 ```bash
-python main.py --lat1 <latitude1> --lng1 <longitude1> --lat2 <latitude2> --lng2 <longitude2> --keyword <search_keyword> [--output <output_file>] [--api-key <api_key>]
+python main.py --lat1 <latitude1> --lng1 <longitude1> --lat2 <latitude2> --lng2 <longitude2> --keyword <search_keyword> [--output <output_file>] [--api-key <api_key>] [--type <place_type>]
 ```
 
-#### Required Arguments:
-- `--lat1`: Latitude of the first point
-- `--lng1`: Longitude of the first point
-- `--lat2`: Latitude of the second point
-- `--lng2`: Longitude of the second point
-- `--keyword`: Keyword to search for (e.g., "erdbeer", "coffee", "restaurant")
+#### Type Filtering
+- `--type <place_type>`: Restricts results to a single place type (e.g., `hospital`).
+    - If multiple types are provided with a pipe (`|`), only the first is used (e.g., `hospital|pharmacy|doctor` becomes `hospital`).
+    - If a comma (`,`) is present, the type is ignored entirely.
+    - Only one type is supported by the API.
 
-#### Optional Arguments:
-- `--output`: Path to save the results as a JSON file
-- `--api-key`: Google Maps API key (if not provided in .env file)
+#### Phone Numbers in Output
+- If available, each place result will now include a `phone_number` field in the output JSON. This requires an additional API call per place and may slow down searches for large result sets.
+
+#### Arguments:
+- `--lat1` (float, required): Latitude of the first point
+- `--lng1` (float, required): Longitude of the first point
+- `--lat2` (float, required): Latitude of the second point
+- `--lng2` (float, required): Longitude of the second point
+- `--keyword` (str, required): Keyword to search for (e.g., "erdbeer", "coffee", "restaurant")
+- `--type` (str, optional): Restrict results to a single place type (see above for details)
+- `--output` (str, required): Path to save the results as a JSON file
+- `--api-key` (str, optional): Google Maps API key (if not provided in .env file)
+- `--radius` (float, optional): Maximum search radius in kilometers (default: 50.0)
+- `--max-results` (int, optional): Maximum number of results to return (default: 200)
+- `--buffer` (float, optional): Width tolerance around path in kilometers (default: 5.0)
+- `--verbose` (flag, optional): Show detailed search information
 
 ### Example
 
 ```bash
-# Search for "erdbeer" (strawberry) places between Berlin and Munich
-python main.py --lat1 52.5200 --lng1 13.4050 --lat2 48.1351 --lng2 11.5820 --keyword "erdbeer" --output results.json
+# Search for "erdbeer" (strawberry) places between two points with a type filter
+python main.py \
+  --lat1 49.49607309173976 \
+  --lng1 11.0552694512119 \
+  --lat2 49.48592739050204 \
+  --lng2 11.075283833840167 \
+  --keyword "erdbeer" \
+  --type "food" \
+  --output "erdbeer_places.json"
 ```
 
 ## How It Works
@@ -88,6 +112,27 @@ python main.py --lat1 52.5200 --lng1 13.4050 --lat2 48.1351 --lng2 11.5820 --key
 This project can be extended to use the Model Context Protocol (MCP) for Google Maps if needed. The MCP integration would allow for more advanced context-aware searches and improved result filtering.
 
 For MCP integration, refer to the [Google Maps MCP repository](https://github.com/modelcontextprotocol/servers/tree/main/src/google-maps).
+
+## Example
+
+```bash
+bash example.bash
+```
+
+## Logging
+
+```
+2025-05-01 14:44:45.776 | INFO     | __main__:main:106 - Type filter set to: 'food' (valid)
+2025-05-01 14:44:45.783 | INFO     | __main__:main:153 - Searching for 'erdbeer' between points...
+2025-05-01 14:44:45.783 | INFO     | place_search:_direct_api_search:122 - Search radius: 0.92 km
+2025-05-01 14:47:27.429 | INFO     | place_search:_direct_api_search:142 - Initial search: 161.65s
+2025-05-01 14:47:27.430 | DEBUG    | place_search:_direct_api_search:150 - Processing 1 results
+2025-05-01 14:47:27.535 | INFO     | place_search:_direct_api_search:195 - Found 1 results in 161.75s
+2025-05-01 14:47:27.536 | INFO     | __main__:main:168 - Results saved to erdbeer_places.json
+2025-05-01 14:47:27.537 | INFO     | __main__:main:173 - Found 1 matching places
+Search complete! Results saved to erdbeer_places.json
+```
+
 
 ## Output Format
 
